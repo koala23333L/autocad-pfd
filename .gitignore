@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+out/
+ErrorReports/
+*.dwg
+*.bak
+*.tmp.pdf
