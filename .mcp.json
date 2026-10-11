@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "autocad-pfd": {
+      "command": "python",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/server/server.py"],
+      "env": {},
+      "description": "通过 COM 驱动本机 AutoCAD 绘制化工 PFD 图（HG/T 20519 规范）"
+    }
+  }
+}

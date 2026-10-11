@@ -1,0 +1,81 @@
+════════════════════════════════════════════════════════════════
+ autocad-pfd MCP 服务器 v0.2.0 —— 安装与使用说明（必读）
+ 化工 PFD 图绘制（HG/T 20519-2009）· 驱动本机 AutoCAD · 即插即用
+════════════════════════════════════════════════════════════════
+
+【给 AI 助手的第一指令】
+如果你是收到本压缩包的 AI 助手：请先完整读完本文档，然后——
+1. 检查环境（Windows / AutoCAD 已装 / python 可用），缺 Python 依赖时
+   自行执行 pip install -r server/requirements.txt；
+2. 按下方"安装步骤"把插件装好或直接以本地目录加载；
+3. 绘图任务一律走"使用流程"：写 spec → check_pfd_layout 清零 →
+   draw_pfd → inspect_png 逐台复核 → AutoCAD 打开交付；
+4. 画不熟的设备先 Read references/ 里的标准图例核对画法；
+5. 几何红线由预检器强制，工艺逻辑按用户任务描述与 SKILL.md 红线手册执行。
+
+【这是什么】
+一个 ZCode 插件形态的 MCP 服务器：AI 助手通过它驱动本机 AutoCAD，
+按规范自动绘制化工工艺物料流程图（PFD），导出 DWG / PDF / PNG。
+已在与 AutoCAD 2027 中文版（教育版）联调的丙烯酸装置 PFD 上完整验证。
+
+【环境要求】
+1. Windows 10/11 + 本机安装 AutoCAD（任何支持 AutoCAD.Application COM 的版本；
+   2027 已验证）。
+2. Python 3.10 及以上（64 位）。
+3. ZCode 桌面端（用于加载 MCP 插件）。
+
+【安装步骤（三步）】
+1. 解压本压缩包到任意目录，例如 D:\tools\autocad-pfd
+   （内层文件夹 autocad-pfd/ 就是插件本体，别多套一层）。
+2. 安装 Python 依赖（cmd 执行）：
+     pip install -r D:\tools\autocad-pfd\server\requirements.txt
+   依赖共 4 项：mcp、pywin32、pypdfium2、pillow。
+3. 在 ZCode 中加载插件：设置 → 插件 → 添加本地插件，
+   指向 D:\tools\autocad-pfd（或把 autocad-pfd 文件夹复制进 ZCode 的
+   plugins 目录），重启会话即可看到 autocad-pfd 的 MCP 工具。
+
+【使用流程（AI 助手按此执行）】
+1. 把工艺任务写成 spec（设备 kind/tag/name + 管线 from/to/via + 文本标注）。
+   设备坐标可以不给 —— 服务器会按流程顺序自动排布（自左向右、行满换行）。
+2. 先调 check_pfd_layout(spec) 预检：errors 必须清零（有硬伤会列出逐条违规）。
+3. 调 draw_pfd(spec) 一次成图（内部自动：新建空白文档 → 再跑一遍预检 →
+   绘制 → 保存 → 导出 PNG/PDF）；auto_stream_no:true 可自动补流股号。
+4. 用 server/inspect_png.py 对导出 PNG 逐台设备裁剪特写做目视复核。
+5. AutoCAD 打开 DWG（ZOOM E）交付。
+
+【目录与文件注释】
+autocad-pfd/
+  .zcode-plugin/plugin.json   插件清单（名称/版本/入口声明）
+  .mcp.json                   MCP 服务器定义（stdio: python server/server.py）
+  README.md                   功能总览与工具表
+  references/                 ★图例参考资料库（画法争议时的唯一基准；支持自备
+                              资料——设备图例扫描件/手册裁剪图放入后自动扫描）
+    generated/symbols_all.png 本 MCP 全部符号的成图总表（校验基准）
+    INDEX.md                  资料目录索引
+  server/
+    server.py                 MCP 工具层：draw_pfd（一次成图，含预检/自动排布/
+                              自动编号/避障走线）、check_pfd_layout（只预检）、
+                              list_references（列参考资料）、图元级工具
+    layout_check.py           布局预检器：9 类几何红线，硬伤直接拒绝成图
+                              （斜线/穿设备/压字/悬空接管/入标题栏/出图框等）
+    symbols.py                设备/阀门/仪表图例库（含端口与方向）
+    sheets.py                 图框/标题栏/设备一览/流股号（断线留缺口画法）
+    cad.py                    AutoCAD COM 连接/图元/图层/PDF·PNG 导出
+    standards.py              HG/T 20519 常量（线宽/字高/代号/等级）
+    inspect_png.py            成图 QA：自动图框标定 + 逐台设备裁剪特写
+    dismiss_login.py          教育版"登录-Autodesk"弹窗自动关闭
+                              （只发 WM_CLOSE 关窗，绝不输入任何凭据）
+    wait_ready.py / smoke_test.py 等   辅助脚本
+  skills/autocad-pfd/SKILL.md ★红线手册：一次成图 checklist 与画法红线清单
+                              （混合器倒三角、闪蒸罐顶出气、再沸器四路、
+                              封头比例、塔板示意、内件贴壁、无斜线、无线头等）
+
+【注意事项】
+1. 本服务器只操作本机 AutoCAD 的图形文档，不联网、不上传任何数据。
+2. 对教育版弹窗只做"关闭窗口"处理，绝不会代替用户登录或输入账号密码。
+3. 修改 symbols.py 新增设备后，请重新生成 references/generated/symbols_all.png
+   并同步更新 layout_check 与 SKILL.md 红线。
+4. 版本 0.2.0（2026-10-11）：在 10 万吨/年丙烯酸装置 PFD（18 台设备 46 条管线）
+   上端到端验证，预检 CHECK_CLEAN、导出零警告。
+
+════════════════════════════════════════════════════════════════
