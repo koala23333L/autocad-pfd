@@ -403,20 +403,31 @@ def _kettle_reboiler(b, s, nozzles=None):
 
 
 def _mixer(b, s, nozzles=None):
-    """混合器（PFD 气/液混合器标准画法，Aspen MIXER 同形）：倒三角形，
-    顶边进料（TL/T/TR 三向），底角出料（B）。s=顶边宽基准。nozzles 选择画出的接管。"""
-    W, H = 1.6 * s, 0.9 * s
-    b.line([(-W / 2, H / 2), (W / 2, H / 2), (0, -H / 2), (-W / 2, H / 2)])
+    """混合器（HG/T 20519 常用机械「混合机」画法；气体静态混合器同形）：
+    矩形壳体 + 内部沿程折线混合元件；多路进料在左缘（TL/T/TR，偏 ±H/3），
+    出料在右缘中点（B）。**不用三角形**（三角是流程模拟软件图标，非工程符号）。
+    s = 壳体长度基准；竖向安装时按 rotation 旋转（-90 → 进料在上、出料在下）。"""
+    W, H = 1.7 * s, 1.6 * s
+    b.rect((-W / 2, -H / 2), (W / 2, H / 2))
+    # 内部混合元件：沿程锯齿折线（4 段交替上下，示意静态混合元件）
+    xa, xb = -W / 2 + 0.12 * W, W / 2 - 0.12 * W
+    n = 4
+    step = (xb - xa) / n
+    pts = [(xa, 0)]
+    for i in range(n):
+        pts.append((xa + step * (i + 0.5), H * 0.22 * (1 if i % 2 == 0 else -1)))
+        pts.append((xa + step * (i + 1), 0))
+    b.line(pts)
     st = 0.30 * s
-    ports = {"TL": (-W / 3, H / 2 + st), "T": (0, H / 2 + st), "TR": (W / 3, H / 2 + st),
-             "B": (0, -H / 2 - st)}
+    ports = {"TL": (-W / 2 - st, H / 3), "T": (-W / 2 - st, 0), "TR": (-W / 2 - st, -H / 3),
+             "B": (W / 2 + st, 0)}
     for name, (dx, dy) in ports.items():
         if nozzles is not None and name not in nozzles:
             continue
         if name == "B":
-            b.seg((0, -H / 2), (0, dy))
+            b.seg((W / 2, 0), (dx, dy))
         else:
-            b.seg((dx, H / 2), (dx, dy))
+            b.seg((-W / 2, dy), (dx, dy))
     return ports
 
 
@@ -612,7 +623,7 @@ EQUIPMENT = {
     "separator": (_separator, 90, "分离器/闪蒸罐(V)：浅封头壳+进口挡板+顶部除沫器虚线；气相走 top、液相走 bottom、进料走 inlet(侧)"),
     "storage_tank": (_storage_tank, 80, "储罐(V)：平顶罐=矩形+底部地平线；接口 inlet/outlet"),
     "reboiler": (_kettle_reboiler, 70, "釜式重沸器(E)：通道封头+带汽相空间釜体+U形管束；接口 heating_in/out(通道上下)/vapor_out(汽相顶,返塔)/process_in(釜底,塔底液)"),
-    "mixer": (_mixer, 30, "混合器(M)：倒三角形，顶边进料(TL/T/TR)、底角出料(B)；options.nozzles 选画接管"),
+    "mixer": (_mixer, 30, "混合器(M)：矩形壳+内部折线混合元件（HG/T 20519 混合机），左缘多路进料(TL/T/TR)、右缘出料(B)；options.nozzles 选画接管"),
     "fixed_bed_reactor": (_fixed_bed_reactor, 110, "固定床反应器(R，标准图例反应器行)：立式细壳浅封头+催化剂床(矩形+X)；进料 top(上进)或 side_L/side_R(侧进)，bottom 出料；nozzles 选画接管"),
     "decanter": (_decanter, 80, "分层器/倾析器(D)：立式浅封头壳+溢流挡板+分界虚线；接口 feed(顶)/organic(右轻相)/aqueous(底重相)"),
     "cyclone": (_cyclone, 80, "旋风分离器：上圆筒+下锥；切向 inlet(右)/vapor_out(顶)/solids_out(底)；除尘、气固分离"),
@@ -643,7 +654,7 @@ PORT_DIR = {
     "storage_tank": {"inlet": (0, 1), "outlet": (0, -1)},
     "reboiler": {"heating_in": (0, 1), "heating_out": (0, -1),
                  "vapor_out": (0, 1), "process_in": (0, -1)},
-    "mixer": {"TL": (0, 1), "T": (0, 1), "TR": (0, 1), "B": (0, -1), "L": (-1, 0), "R": (1, 0)},
+    "mixer": {"TL": (-1, 0), "T": (-1, 0), "TR": (-1, 0), "B": (1, 0)},
     "fixed_bed_reactor": {"top": (0, 1), "bottom": (0, -1), "side_L": (-1, 0), "side_R": (1, 0),
                           "side_L_low": (-1, 0), "side_R_low": (1, 0)},
     "decanter": {"feed": (0, 1), "organic": (1, 0), "aqueous": (0, -1)},
@@ -737,8 +748,8 @@ def equipment_extents(kind, size, options=None):
         W = 0.6 * s; st = 0.22 * s
         return (-W / 2, -s / 2 - st, W / 2 + st, s / 2 + st)
     if kind == "mixer":
-        W, H = 1.6 * s, 0.9 * s; st = 0.30 * s
-        return (-W / 2, -H / 2 - st, W / 2, H / 2 + st)
+        W, H = 1.7 * s, 1.6 * s; st = 0.30 * s
+        return (-W / 2 - st, -H / 2, W / 2 + st, H / 2)
     if kind == "cyclone":
         st = 0.12 * s
         return (-0.25 * s - st, -s / 2 - st, 0.25 * s + st, s / 2 + st)

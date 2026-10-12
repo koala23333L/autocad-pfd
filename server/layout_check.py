@@ -43,7 +43,8 @@ def _body_rect(kind, s, options):
     if kind == "separator":
         return (-0.225 * s, -s / 2, 0.225 * s, s / 2)
     if kind == "mixer":
-        return None  # 倒三角：用全 ext
+        # 矩形混合器壳体（HG/T 20519 混合机），接管短桩不算本体
+        return (-0.85 * s, -0.8 * s, 0.85 * s, 0.8 * s)
     if kind == "reboiler":
         # 釜式再沸器本体=通道+釜体的公共包络（汽包顶/釜底以下的接管区不算本体）
         return (-s / 2, -0.16 * s, s / 2, 0.16 * s)
