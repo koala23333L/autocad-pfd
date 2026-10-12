@@ -634,7 +634,7 @@ def draw_pfd(spec: dict) -> dict:
             drawn["pipes"] += 1
         for ins in spec.get("instruments", []):
             symbols.draw_instrument(doc, ins["letters"], str(ins["number"]), float(ins["x"]), float(ins["y"]),
-                                    mount=ins.get("mount", "field"), signal=ins.get("signal", "mechanical"),
+                                    mount=ins.get("mount"), signal=ins.get("signal", "mechanical"),
                                     connect_to=tuple(ins["connect_to"]) if ins.get("connect_to") else None)
             drawn["instruments"] += 1
         for hl in spec.get("heat_loads", []):

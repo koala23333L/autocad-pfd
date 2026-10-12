@@ -769,8 +769,7 @@ def _bowtie(b, s):
 
 
 def _v_gate(b, s):
-    _bowtie(b, s)
-    b.seg((0, 0), (0, s * 0.9))  # 闸阀：阀杆短竖线
+    _bowtie(b, s)  # 闸阀（表2-8 #1）：纯双三角，无阀杆
 
 
 def _v_globe(b, s):
@@ -846,9 +845,10 @@ def _v_diaphragm(b, s):
 
 
 def _v_control(b, s):
-    """调节阀：双三角 + 阀杆 + 气动薄膜执行机构（圆顶，附表2-4）。"""
+    """调节阀：双三角 + 阀杆 + 气动薄膜执行机构（圆顶，附表2-4）。
+    阀杆必须从阀体中心一直连到膜头底边（1.35s），否则膜头与阀体断开。"""
     _bowtie(b, s)
-    b.seg((0, 0), (0, s * 0.9))
+    b.seg((0, 0), (0, s * 1.35))
     b.arc((0, s * 1.35), s * 0.55, 0, 180)
     b.seg((-s * 0.55, s * 1.35), (s * 0.55, s * 1.35))
 
@@ -877,9 +877,13 @@ def draw_valve(doc, kind, x, y, rotation=0.0, size=6.0):
 
 
 # ================================================================ 仪表
-def draw_instrument(doc, letters, number, x, y, mount="field", dia=8.0,
+def draw_instrument(doc, letters, number, x, y, mount=None, dia=8.0,
                     connect_to=None, signal="mechanical"):
-    """仪表位号圆圈：上半写字母代号(检测参数+功能)，下半写数字位号。"""
+    """仪表位号圆圈：上半写字母代号(检测参数+功能)，下半写数字位号。
+    mount 省略时按位号字母推断：控制器（以 C 结尾，如 FIC/TIC/LIC/PIC）默认
+    central（集中安装=圆内横线，HG/T 20519 附表），其余默认 field（就地=空心圆）。"""
+    if mount is None:
+        mount = "central" if str(letters).upper().endswith("C") else "field"
     r = dia / 2.0
     cad.add_circle(doc, (x, y), r, "PFD-INSTR", 25)
     if mount == "inpipe":

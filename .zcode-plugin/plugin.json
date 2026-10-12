@@ -1,6 +1,6 @@
 {
   "name": "autocad-pfd",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "MCP server that drives the local AutoCAD (COM automation) to draw HG/T 20519-compliant chemical process flow diagrams (PFD): drawing frames, equipment symbols, process/utility piping with line weights, valves, instrument bubbles, pipe numbering, material balance tables and title blocks.",
   "author": {
     "name": "ailashi"
